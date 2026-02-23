@@ -1,0 +1,131 @@
+const DEFAULT_SETTINGS = {
+  enabled: true,
+  targetLanguage: "ko"
+};
+
+const SUBTITLE_SELECTORS = [
+  '[data-purpose="captions-text"]',
+  '[class*="captions-text"]',
+  '[class*="captions-display"]'
+];
+
+let settings = { ...DEFAULT_SETTINGS };
+
+async function refreshSettings() {
+  settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+}
+
+function getCaptionCandidates() {
+  const nodes = [];
+
+  SUBTITLE_SELECTORS.forEach((selector) => {
+    document.querySelectorAll(selector).forEach((element) => {
+      if (!(element instanceof HTMLElement)) {
+        return;
+      }
+
+      if (element.closest(".udemy-dual-subtitle")) {
+        return;
+      }
+
+      nodes.push(element);
+    });
+  });
+
+  return [...new Set(nodes)];
+}
+
+function getPrimaryText(element) {
+  const cloned = element.cloneNode(true);
+  cloned.querySelectorAll(".udemy-dual-subtitle").forEach((node) => node.remove());
+  return cloned.textContent?.trim() ?? "";
+}
+
+async function requestTranslation(text) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      {
+        type: "TRANSLATE_TEXT",
+        text,
+        targetLanguage: settings.targetLanguage
+      },
+      (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+          resolve("");
+          return;
+        }
+
+        resolve(response.translatedText ?? "");
+      }
+    );
+  });
+}
+
+async function updateDualSubtitle(element) {
+  if (!settings.enabled) {
+    element.querySelectorAll(".udemy-dual-subtitle").forEach((node) => node.remove());
+    return;
+  }
+
+  const sourceText = getPrimaryText(element);
+  if (!sourceText) {
+    return;
+  }
+
+  if (element.dataset.dualSubtitleSource === sourceText && element.dataset.dualSubtitleLang === settings.targetLanguage) {
+    return;
+  }
+
+  const translatedText = await requestTranslation(sourceText);
+  if (!translatedText) {
+    return;
+  }
+
+  let translationNode = element.querySelector(":scope > .udemy-dual-subtitle");
+  if (!translationNode) {
+    translationNode = document.createElement("div");
+    translationNode.className = "udemy-dual-subtitle";
+    element.appendChild(translationNode);
+  }
+
+  translationNode.textContent = translatedText;
+  element.dataset.dualSubtitleSource = sourceText;
+  element.dataset.dualSubtitleLang = settings.targetLanguage;
+}
+
+async function renderAll() {
+  const candidates = getCaptionCandidates();
+  await Promise.all(candidates.map((element) => updateDualSubtitle(element)));
+}
+
+const observer = new MutationObserver(() => {
+  renderAll();
+});
+
+async function init() {
+  await refreshSettings();
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+  renderAll();
+}
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "sync") {
+    return;
+  }
+
+  if (changes.enabled) {
+    settings.enabled = changes.enabled.newValue;
+  }
+
+  if (changes.targetLanguage) {
+    settings.targetLanguage = changes.targetLanguage.newValue;
+  }
+
+  renderAll();
+});
+
+init();

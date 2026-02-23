@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Udemy Dual Subtitle Translator",
+  "description": "Translate Udemy captions into a selected language and render dual subtitles.",
+  "version": "0.1.0",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.udemy.com/*",
+    "https://translate.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Udemy Dual Subtitle"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.udemy.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
