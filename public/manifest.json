@@ -6,7 +6,8 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.udemy.com/*",
-    "https://translate.googleapis.com/*"
+    "https://translate.googleapis.com/*",
+    "http://localhost:35729/*"
   ],
   "background": {
     "service_worker": "background.js"

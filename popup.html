@@ -4,25 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Udemy 이중 자막</title>
-    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main class="popup">
-      <h1>Udemy 이중 자막</h1>
-
-      <label class="field row" for="enabled">
-        <span>번역 스위치</span>
-        <input id="enabled" type="checkbox" />
-      </label>
-
-      <label class="field" for="targetLanguage">
-        <span>번역 언어</span>
-        <select id="targetLanguage"></select>
-      </label>
-
-      <p class="hint">* Udemy 자막 원문 아래에 번역문이 함께 표시됩니다.</p>
-    </main>
-
-    <script src="popup.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/popup/main.tsx"></script>
   </body>
 </html>
