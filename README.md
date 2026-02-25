@@ -5,7 +5,7 @@
 ![Extension Icon](public/icons/icon-128.png)
 </div>
 
-Udemy 강의의 현재 자막을 선택한 언어로 번역해 원문 아래에 이중 자막으로 보여주는 크롬 확장 프로그램입니다.
+This Chrome extension translates Udemy lecture captions into a selected language and renders dual subtitles below the original captions.
 
 ## Screenshots
 
@@ -17,10 +17,12 @@ Udemy 강의의 현재 자막을 선택한 언어로 번역해 원문 아래에 
 
 ## Features
 
-- 번역 ON/OFF 스위치
-- 번역 언어 선택
-- 영상 자막 아래에 번역문을 함께 표시(이중 자막)
-- 동일 문장 재등장 시 번역 캐시 사용
+- Translation ON/OFF toggle
+- Select target language
+- Render translated captions below the original (dual subtitles)
+- Reuse cached translations for repeated sentences
+- Prefetch VTT captions to reduce perceived latency
+- Automatically ignore sprite VTTs (thumb-sprites)
 
 ## Tech Stack
 
@@ -31,62 +33,77 @@ Udemy 강의의 현재 자막을 선택한 언어로 번역해 원문 아래에 
 
 ## Quick Start
 
-1. 의존성 설치
+1. Install dependencies
    - `npm install`
-2. 빌드
+2. Build
    - `npm run build`
-3. 크롬에서 `chrome://extensions` 접속
-4. 우측 상단 **개발자 모드** 활성화
-5. **압축해제된 확장 프로그램을 로드** → `dist` 폴더 선택
-6. 확장 아이콘이 표시되는지 확인
+3. Open `chrome://extensions` in Chrome
+4. Enable **Developer mode** (top right)
+5. **Load unpacked** → select the `dist` folder
+6. Verify the extension icon appears
 
 ## Usage
 
-1. Udemy 강의 재생 페이지를 엽니다.
-2. 확장 아이콘 클릭 → 번역 스위치 활성화.
-3. 원하는 번역 언어를 선택합니다.
-4. 기본 자막 아래에 번역 자막이 자동으로 표시됩니다.
+1. Open a Udemy lecture page.
+2. Click the extension icon and enable translation.
+3. Select the target language.
+4. Translated captions appear below the original captions automatically.
 
-## Dev Reload (자동 반영)
+## Dev Reload (Auto Refresh)
 
-`dist` 빌드 변경을 감지해 확장 프로그램을 자동 리로드합니다.
+Watches `dist` build output and reloads the extension automatically.
 
-1. 빌드 감시 실행
+1. Start build watch
    - `npm run build:watch`
-2. 리로드 서버 실행
+2. Start reload server
    - `npm run reload:server`
-3. 크롬 확장 프로그램에서 `dist` 폴더 로드
+3. Load the `dist` folder in Chrome Extensions
 
-Udemy 강의 페이지가 열려 있을 때 변경 사항이 자동으로 반영됩니다.
+When the Udemy page is open, changes are applied automatically.
 
 ## Icon Assets
 
-- 위치: `public/icons/`
-- 파일: `icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png`
-- `manifest.json`의 `icons`, `action.default_icon`에 연결됨
+- Location: `public/icons/`
+- Files: `icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png`
+- Referenced by `manifest.json` under `icons` and `action.default_icon`
 
 ## Permissions
 
-- `storage`: 사용자 설정 저장
-- `https://www.udemy.com/*`: Udemy 강의 페이지 접근
-- `https://translate.googleapis.com/*`: 번역 API 호출
-- `http://localhost:35729/*`: 개발 리로드 서버(개발 환경 전용)
+- `storage`: store user settings
+- `https://www.udemy.com/*`: access Udemy lecture pages
+- `https://translate.googleapis.com/*`: call translation API
+- `http://localhost:35729/*`: dev reload server (dev only)
 
 ## How It Works
 
-- 콘텐츠 스크립트가 Udemy 자막 DOM 변화를 감지합니다.
-- 백그라운드 서비스 워커가 번역 API를 호출합니다.
-- 번역 텍스트를 원본 자막 요소에 추가 렌더링합니다.
+- The content script watches Udemy caption DOM changes.
+- It detects VTT caption URLs and prefetches upcoming captions in the background.
+- The background service worker calls the translation API and stores results in cache.
+- Translated text is rendered into the caption container.
+
+## Technical Details
+
+- VTT detection
+  - Detects `.vtt` requests from `<track>` tags or `performance` resources.
+  - Excludes sprite VTTs containing `thumb-sprites` or `xywh` patterns.
+- Prefetch policy
+  - Prefetch runs only while video is playing.
+  - Skips requests when `currentTime` is not advancing to reduce noise.
+- Cache strategy
+  - Translation results are stored in LRU caches.
+  - Both content and background caches have max size limits.
+- Text normalization
+  - Normalizes whitespace and removes speaker labels to improve VTT-caption matching.
 
 ## Notes
 
-- Udemy 페이지 구조 변경 시 선택자 업데이트가 필요할 수 있습니다.
-- 번역 API 가용성/정책에 따라 동작이 달라질 수 있습니다.
+- If Udemy changes its DOM structure, selectors may need updates.
+- Behavior may vary based on translation API availability/policy.
 
 ## Contributing
 
-- 이슈/PR 환영합니다. 변경 사항이 있을 경우 간단한 설명과 스크린샷을 포함해 주세요.
-- 코드는 `npm run build`를 통과해야 합니다.
+- Issues/PRs welcome. Please include a short description and screenshots where relevant.
+- Code should pass `npm run build`.
 
 ## License
 
