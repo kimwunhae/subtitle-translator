@@ -6,6 +6,7 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.udemy.com/*",
+    "https://*.udemycdn.com/*",
     "https://translate.googleapis.com/*",
     "http://localhost:35729/*"
   ],

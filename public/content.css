@@ -8,3 +8,7 @@
   font-weight: 500;
   pointer-events: none;
 }
+
+.udemy-dual-subtitle.pending {
+  opacity: 0.6;
+}
