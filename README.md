@@ -3,6 +3,7 @@
 # Udemy Dual Subtitle Translator (Chrome Extension)
 
 ![Extension Icon](public/icons/icon-128.png)
+
 </div>
 
 This Chrome extension translates Udemy lecture captions into a selected language and renders dual subtitles below the original captions.
@@ -11,8 +12,9 @@ This Chrome extension translates Udemy lecture captions into a selected language
 
 <div align="center">
 
-![Dual Subtitle](docs/screenshots/player-dual-subtitle.png)
 ![Popup UI](docs/screenshots/popup-ui.png)
+![Dual Subtitle](docs/screenshots/player-dual-subtitle.png)
+
 </div>
 
 ## Features
