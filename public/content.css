@@ -1,3 +1,4 @@
+/* Dual subtitle styling */
 .udemy-dual-subtitle {
   margin-top: 4px;
   font-size: 0.9em;
@@ -13,11 +14,19 @@
   opacity: 0.6;
 }
 
-[class*='well--container'] {
+/* Udemy caption layout overrides */
+:where([class*='well--container']) {
   flex-direction: column;
   align-items: center;
 }
 
-[class*='well--container'] [class*='well--text'] {
+:where([class*='well--container'] [class*='well--text']) {
   padding-block: 0;
+}
+
+:where([data-purpose='captions-cue-text']) {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-direction: column !important;
 }
