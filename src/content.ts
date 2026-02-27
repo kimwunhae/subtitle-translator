@@ -25,8 +25,44 @@ let lastPrefetchVideoTime = -1;
 let renderScheduled = false;
 let prefetchTimer: number | null = null;
 
+function normalizePreserveTerms(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const deduped = new Set<string>();
+  for (const value of raw) {
+    if (typeof value !== 'string') {
+      continue;
+    }
+    const term = value.trim();
+    if (!term) {
+      continue;
+    }
+    deduped.add(term);
+  }
+
+  return [...deduped];
+}
+
+function preserveTermSignature(terms: string[]) {
+  return terms
+    .map((term) => term.toLowerCase())
+    .sort()
+    .join('||');
+}
+
+function getCurrentTermSignature() {
+  return preserveTermSignature(settings.preserveTerms ?? []);
+}
+
 async function refreshSettings() {
-  settings = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as Settings;
+  const next = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as Settings;
+  settings = {
+    enabled: Boolean(next.enabled),
+    targetLanguage: next.targetLanguage ?? DEFAULT_SETTINGS.targetLanguage,
+    preserveTerms: normalizePreserveTerms(next.preserveTerms),
+  };
 }
 
 function isInMainCaptionArea(element: HTMLElement) {
@@ -115,7 +151,7 @@ async function getTranslation(
   text: string,
   targetLanguage: string,
 ): Promise<string> {
-  const cacheKey = `${targetLanguage}::${text}`;
+  const cacheKey = `${targetLanguage}::${getCurrentTermSignature()}::${text}`;
   const cached = translationCache.get(cacheKey);
   if (cached !== undefined) {
     return cached;
@@ -203,7 +239,7 @@ function prefetchUpcomingTranslations() {
         if (!normalizedText) {
           continue;
         }
-        const cacheKey = `${settings.targetLanguage}::${normalizedText}`;
+        const cacheKey = `${settings.targetLanguage}::${getCurrentTermSignature()}::${normalizedText}`;
         setLruCache(
           translationCache,
           cacheKey,
@@ -298,9 +334,11 @@ async function updateDualSubtitle(element: HTMLElement) {
     return;
   }
 
+  const termSignature = getCurrentTermSignature();
   if (
     element.dataset.dualSubtitleSource === normalizedText &&
-    element.dataset.dualSubtitleLang === settings.targetLanguage
+    element.dataset.dualSubtitleLang === settings.targetLanguage &&
+    element.dataset.dualSubtitleTermsSig === termSignature
   ) {
     return;
   }
@@ -312,7 +350,7 @@ async function updateDualSubtitle(element: HTMLElement) {
     element.appendChild(translationNode);
   }
 
-  const cacheKey = `${settings.targetLanguage}::${normalizedText}`;
+  const cacheKey = `${settings.targetLanguage}::${termSignature}::${normalizedText}`;
   const cached = translationCache.get(cacheKey);
   if (cached !== undefined) {
     translationNode.textContent = cached;
@@ -324,6 +362,7 @@ async function updateDualSubtitle(element: HTMLElement) {
 
   element.dataset.dualSubtitleSource = normalizedText;
   element.dataset.dualSubtitleLang = settings.targetLanguage;
+  element.dataset.dualSubtitleTermsSig = termSignature;
 
   const translatedText = await getTranslation(
     normalizedText,
@@ -412,6 +451,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
   if (changes.targetLanguage) {
     settings.targetLanguage = changes.targetLanguage.newValue;
+  }
+
+  if (changes.preserveTerms) {
+    settings.preserveTerms = normalizePreserveTerms(changes.preserveTerms.newValue);
+    translationCache.clear();
+    translationInFlight.clear();
   }
 
   scheduleRender();
