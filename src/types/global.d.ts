@@ -4,6 +4,7 @@ declare global {
   type Settings = {
     enabled: boolean;
     targetLanguage: string;
+    preserveTerms: string[];
   };
 
   type LanguageOption = {

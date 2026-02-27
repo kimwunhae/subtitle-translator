@@ -1,6 +1,7 @@
 const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   targetLanguage: 'ko',
+  preserveTerms: [],
 };
 
 const SUBTITLE_SELECTORS = [

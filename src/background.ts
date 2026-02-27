@@ -5,12 +5,257 @@ const vttInFlight = new Map<string, Promise<VttCue[]>>();
 const PREFETCH_WINDOW = 5;
 const TRANSLATION_CACHE_LIMIT = 2000;
 const VTT_CACHE_LIMIT = 5;
+const TERM_CANDIDATE_PATTERN = /\b[\w./-]+\b/g;
+const BACKTICK_PATTERN = /`[^`]+`/g;
+const AUTO_PROTECT_SCORE_THRESHOLD = 2;
+const DEFAULT_SETTINGS: Settings = {
+  enabled: true,
+  targetLanguage: 'ko',
+  preserveTerms: [],
+};
+let settingsCache: Settings = { ...DEFAULT_SETTINGS };
 
 type VttCue = {
   start: number;
   end: number;
   text: string;
 };
+
+type ProtectedTerm = {
+  token: string;
+  term: string;
+};
+
+type ProtectedRange = {
+  start: number;
+  end: number;
+  text: string;
+};
+
+function normalizePreserveTerms(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const deduped = new Set<string>();
+  for (const value of raw) {
+    if (typeof value !== 'string') {
+      continue;
+    }
+    const term = value.trim();
+    if (!term) {
+      continue;
+    }
+    deduped.add(term);
+  }
+
+  return [...deduped];
+}
+
+function preserveTermSignature(terms: string[]) {
+  return terms
+    .map((term) => term.toLowerCase())
+    .sort()
+    .join('||');
+}
+
+async function refreshSettingsCache() {
+  const next = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as Settings;
+  const normalized: Settings = {
+    enabled: Boolean(next.enabled),
+    targetLanguage: next.targetLanguage ?? DEFAULT_SETTINGS.targetLanguage,
+    preserveTerms: normalizePreserveTerms(next.preserveTerms),
+  };
+
+  if (
+    preserveTermSignature(normalized.preserveTerms) !==
+    preserveTermSignature(settingsCache.preserveTerms)
+  ) {
+    translationCache.clear();
+  }
+
+  settingsCache = normalized;
+}
+
+function isAsciiWordChar(char: string) {
+  return /[A-Za-z0-9_]/.test(char);
+}
+
+function isBoundarySafe(text: string, start: number, end: number) {
+  const left = text[start - 1] ?? '';
+  const right = text[end] ?? '';
+  if (left && isAsciiWordChar(left)) {
+    return false;
+  }
+  if (right && isAsciiWordChar(right)) {
+    return false;
+  }
+  return true;
+}
+
+function isSentenceStartToken(text: string, start: number) {
+  let index = start - 1;
+  while (index >= 0 && /\s/.test(text[index])) {
+    index -= 1;
+  }
+  if (index < 0) {
+    return true;
+  }
+  return /[.!?:]/.test(text[index]);
+}
+
+function scoreTechnicalToken(token: string, sourceText: string, start: number) {
+  let score = 0;
+
+  const hasUpper = /[A-Z]/.test(token);
+  const hasLower = /[a-z]/.test(token);
+  const hasDigit = /\d/.test(token);
+  const hasSeparator = /[._/]/.test(token);
+  const hasHyphen = /-/.test(token);
+  const isUpperAcronym = /^[A-Z0-9]{2,}(?:[./-][A-Z0-9]+)*$/.test(token);
+  const isCamelLike = /[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*/.test(token);
+  const isPlainWord = /^[a-z]+(?:-[a-z]+)*$/.test(token);
+  const isTitleCase = /^[A-Z][a-z]{3,}$/.test(token);
+  const isAcronymBrand = /^[A-Z]{2,}[a-z]+(?:[A-Z][a-z0-9]+)*$/.test(token);
+  const sentenceStart = isSentenceStartToken(sourceText, start);
+
+  if (isUpperAcronym) {
+    score += 2;
+  }
+  if (isCamelLike) {
+    score += 2;
+  }
+  if (isAcronymBrand) {
+    score += 2;
+  }
+  if (isTitleCase && !sentenceStart) {
+    score += 1;
+  }
+  if (hasDigit) {
+    score += 1;
+  }
+  if (hasSeparator) {
+    score += 1;
+  }
+  if (hasHyphen && (hasUpper || hasDigit)) {
+    score += 1;
+  }
+  if (/^v\d+(?:\.\d+){1,}$/i.test(token)) {
+    score += 2;
+  }
+  if (isPlainWord && !hasUpper && !hasDigit) {
+    score -= 2;
+  }
+  if (token.length <= 2 && !isUpperAcronym) {
+    score -= 1;
+  }
+  if (/^\d+(?:\.\d+)?$/.test(token)) {
+    score -= 2;
+  }
+  if (hasUpper && hasLower) {
+    score += 1;
+  }
+
+  return score;
+}
+
+function collectProtectedRanges(text: string, preserveTerms: string[]) {
+  const ranges: ProtectedRange[] = [];
+
+  for (const term of preserveTerms) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matcher = new RegExp(escaped, 'gi');
+    let match = matcher.exec(text);
+    while (match) {
+      const start = match.index;
+      const matchedText = match[0] ?? '';
+      const end = start + matchedText.length;
+      if (matchedText && isBoundarySafe(text, start, end)) {
+        ranges.push({ start, end, text: matchedText });
+      }
+      match = matcher.exec(text);
+    }
+  }
+
+  BACKTICK_PATTERN.lastIndex = 0;
+  let snippetMatch = BACKTICK_PATTERN.exec(text);
+  while (snippetMatch) {
+    const snippet = snippetMatch[0] ?? '';
+    const start = snippetMatch.index;
+    const end = start + snippet.length;
+    if (snippet && end > start) {
+      ranges.push({ start, end, text: snippet });
+    }
+    snippetMatch = BACKTICK_PATTERN.exec(text);
+  }
+
+  TERM_CANDIDATE_PATTERN.lastIndex = 0;
+  let tokenMatch = TERM_CANDIDATE_PATTERN.exec(text);
+  while (tokenMatch) {
+    const token = tokenMatch[0] ?? '';
+    const start = tokenMatch.index;
+    const end = start + token.length;
+    if (
+      token &&
+      isBoundarySafe(text, start, end) &&
+      scoreTechnicalToken(token, text, start) >= AUTO_PROTECT_SCORE_THRESHOLD
+    ) {
+      ranges.push({ start, end, text: token });
+    }
+    tokenMatch = TERM_CANDIDATE_PATTERN.exec(text);
+  }
+
+  ranges.sort((a, b) => {
+    if (a.start !== b.start) {
+      return a.start - b.start;
+    }
+    return b.end - a.end;
+  });
+
+  const selected: ProtectedRange[] = [];
+  let cursor = -1;
+  for (const range of ranges) {
+    if (range.start < cursor) {
+      continue;
+    }
+    selected.push(range);
+    cursor = range.end;
+  }
+
+  return selected;
+}
+
+function protectTechnicalTerms(text: string, preserveTerms: string[]) {
+  const ranges = collectProtectedRanges(text, preserveTerms);
+  if (ranges.length === 0) {
+    return { protectedText: text, terms: [] as ProtectedTerm[] };
+  }
+
+  let cursor = 0;
+  let index = 0;
+  const terms: ProtectedTerm[] = [];
+  const chunks: string[] = [];
+
+  for (const range of ranges) {
+    chunks.push(text.slice(cursor, range.start));
+    const token = `__UDT_TERM_${index}__`;
+    chunks.push(token);
+    terms.push({ token, term: range.text });
+    cursor = range.end;
+    index += 1;
+  }
+
+  chunks.push(text.slice(cursor));
+  return { protectedText: chunks.join(''), terms };
+}
+
+function restoreProtectedTerms(text: string, terms: ProtectedTerm[]) {
+  let restored = text;
+  for (const { token, term } of terms) {
+    restored = restored.split(token).join(term);
+  }
+  return restored;
+}
 
 async function translateText(
   text: string,
@@ -34,7 +279,11 @@ async function translateText(
   endpoint.searchParams.set('sl', 'auto');
   endpoint.searchParams.set('tl', targetLanguage);
   endpoint.searchParams.set('dt', 't');
-  endpoint.searchParams.set('q', input);
+  const { protectedText, terms } = protectTechnicalTerms(
+    input,
+    settingsCache.preserveTerms,
+  );
+  endpoint.searchParams.set('q', protectedText);
 
   const response = await fetch(endpoint);
   if (!response.ok) {
@@ -42,10 +291,11 @@ async function translateText(
   }
 
   const payload = (await response.json()) as unknown[][][];
-  const translated = (payload?.[0] ?? [])
+  const translatedRaw = (payload?.[0] ?? [])
     .map((segment) => (Array.isArray(segment) ? (segment?.[0] ?? '') : ''))
     .join('')
     .trim();
+  const translated = restoreProtectedTerms(translatedRaw, terms);
 
   setLruCache(translationCache, cacheKey, translated, TRANSLATION_CACHE_LIMIT);
   return translated;
@@ -242,6 +492,17 @@ async function prefetchTranslations(
 
   return translated;
 }
+
+void refreshSettingsCache();
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'sync') {
+    return;
+  }
+
+  if (changes.enabled || changes.targetLanguage || changes.preserveTerms) {
+    void refreshSettingsCache();
+  }
+});
 
 chrome.runtime.onMessage.addListener(
   (message: TranslateRequest | PrefetchVttRequest, _sender, sendResponse) => {
