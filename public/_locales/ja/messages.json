@@ -1,0 +1,43 @@
+{
+  "extensionName": { "message": "Udemy デュアル字幕トランスレータ" },
+  "extensionDescription": {
+    "message": "Udemy の字幕を選択した言語に翻訳し、元の字幕の下に翻訳字幕を表示します。"
+  },
+  "actionTitle": { "message": "Udemy デュアル字幕" },
+
+  "popupTitle": { "message": "Udemy デュアル字幕トランスレータ" },
+  "popupTitleHeading": { "message": "デュアル字幕コントロール" },
+  "popupSubhead": {
+    "message": "元の字幕の下に翻訳字幕を表示します。"
+  },
+  "translationToggle": { "message": "翻訳" },
+  "targetLanguage": { "message": "翻訳言語" },
+  "preserveTerms": { "message": "保護する用語" },
+  "preserveTermsPlaceholder": {
+    "message": "React\nNode.js\nKubernetes"
+  },
+  "preserveTermsHelp": {
+    "message": "1行につき1語を入力すると、翻訳時にそのまま保持されます。"
+  },
+  "translationEnabledHint": {
+    "message": "翻訳字幕は元の字幕の下に自動的に表示されます。"
+  },
+  "translationDisabledHint": {
+    "message": "翻訳は無効になっています。トグルを有効にしてください。"
+  },
+
+  "langKo": { "message": "韓国語" },
+  "langEn": { "message": "英語" },
+  "langJa": { "message": "日本語" },
+  "langZhCN": { "message": "中国語（簡体字）" },
+  "langZhTW": { "message": "中国語（繁体字）" },
+  "langEs": { "message": "スペイン語" },
+  "langFr": { "message": "フランス語" },
+  "langDe": { "message": "ドイツ語" },
+  "langIt": { "message": "イタリア語" },
+  "langPt": { "message": "ポルトガル語" },
+  "langRu": { "message": "ロシア語" },
+  "langVi": { "message": "ベトナム語" },
+  "langId": { "message": "インドネシア語" },
+  "langTh": { "message": "タイ語" }
+}

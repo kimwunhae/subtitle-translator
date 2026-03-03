@@ -1,0 +1,43 @@
+{
+  "extensionName": { "message": "Udemy Dual Subtitle Translator" },
+  "extensionDescription": {
+    "message": "Translate Udemy captions into a selected language and render dual subtitles."
+  },
+  "actionTitle": { "message": "Udemy Dual Subtitle" },
+
+  "popupTitle": { "message": "Udemy Dual Subtitle Translator" },
+  "popupTitleHeading": { "message": "Dual Subtitle Control" },
+  "popupSubhead": {
+    "message": "Display translated subtitles below the original subtitles."
+  },
+  "translationToggle": { "message": "Translation" },
+  "targetLanguage": { "message": "Target Language" },
+  "preserveTerms": { "message": "Preserve Terms" },
+  "preserveTermsPlaceholder": {
+    "message": "React\nNode.js\nKubernetes"
+  },
+  "preserveTermsHelp": {
+    "message": "Enter one term per line to keep it unchanged during translation."
+  },
+  "translationEnabledHint": {
+    "message": "Translated subtitles are automatically shown under the original subtitles."
+  },
+  "translationDisabledHint": {
+    "message": "Translation is disabled. Enable it with the toggle."
+  },
+
+  "langKo": { "message": "Korean" },
+  "langEn": { "message": "English" },
+  "langJa": { "message": "Japanese" },
+  "langZhCN": { "message": "Chinese (Simplified)" },
+  "langZhTW": { "message": "Chinese (Traditional)" },
+  "langEs": { "message": "Spanish" },
+  "langFr": { "message": "French" },
+  "langDe": { "message": "German" },
+  "langIt": { "message": "Italian" },
+  "langPt": { "message": "Portuguese" },
+  "langRu": { "message": "Russian" },
+  "langVi": { "message": "Vietnamese" },
+  "langId": { "message": "Indonesian" },
+  "langTh": { "message": "Thai" }
+}

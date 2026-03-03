@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import "./popup.css";
+import { resolveUiLanguage, t } from "./i18n";
 
 const DEFAULT_SETTINGS: Settings = {
   enabled: true,
@@ -7,21 +8,25 @@ const DEFAULT_SETTINGS: Settings = {
   preserveTerms: []
 };
 
-const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: "ko", label: "한국어" },
-  { code: "en", label: "English" },
-  { code: "ja", label: "日本語" },
-  { code: "zh-CN", label: "中文(简体)" },
-  { code: "zh-TW", label: "中文(繁體)" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "it", label: "Italiano" },
-  { code: "pt", label: "Português" },
-  { code: "ru", label: "Русский" },
-  { code: "vi", label: "Tiếng Việt" },
-  { code: "id", label: "Bahasa Indonesia" },
-  { code: "th", label: "ไทย" }
+type LanguageOptionWithLabel = LanguageOption & {
+  labelMessageKey: string;
+};
+
+const LANGUAGE_OPTIONS: LanguageOptionWithLabel[] = [
+  { code: "ko", label: "한국어", labelMessageKey: "langKo" },
+  { code: "en", label: "English", labelMessageKey: "langEn" },
+  { code: "ja", label: "日本語", labelMessageKey: "langJa" },
+  { code: "zh-CN", label: "中文(简体)", labelMessageKey: "langZhCN" },
+  { code: "zh-TW", label: "中文(繁體)", labelMessageKey: "langZhTW" },
+  { code: "es", label: "Español", labelMessageKey: "langEs" },
+  { code: "fr", label: "Français", labelMessageKey: "langFr" },
+  { code: "de", label: "Deutsch", labelMessageKey: "langDe" },
+  { code: "it", label: "Italiano", labelMessageKey: "langIt" },
+  { code: "pt", label: "Português", labelMessageKey: "langPt" },
+  { code: "ru", label: "Русский", labelMessageKey: "langRu" },
+  { code: "vi", label: "Tiếng Việt", labelMessageKey: "langVi" },
+  { code: "id", label: "Bahasa Indonesia", labelMessageKey: "langId" },
+  { code: "th", label: "ไทย", labelMessageKey: "langTh" }
 ];
 
 export default function App() {
@@ -31,7 +36,19 @@ export default function App() {
   );
   const [preserveTermsText, setPreserveTermsText] = useState("");
 
-  const languageOptions = useMemo(() => LANGUAGE_OPTIONS, []);
+  const languageOptions = useMemo(
+    () =>
+      LANGUAGE_OPTIONS.map((option) => ({
+        ...option,
+        label: t(option.labelMessageKey, option.label),
+      })),
+    [],
+  );
+
+  useEffect(() => {
+    document.title = t("popupTitle", "Udemy Dual Subtitle Translator");
+    document.documentElement.lang = resolveUiLanguage();
+  }, []);
 
   useEffect(() => {
     chrome.storage.sync.get(DEFAULT_SETTINGS).then((settings) => {
@@ -81,14 +98,14 @@ export default function App() {
   return (
     <main className="popup">
       <header className="popup-header">
-        <p className="eyebrow">Udemy Dual Subtitle Translator</p>
-        <h1>Dual Subtitle Control</h1>
-        <p className="subhead">원본 자막 아래에 번역 자막을 함께 표시합니다.</p>
+        <p className="eyebrow">{t("popupTitle", "Udemy Dual Subtitle Translator")}</p>
+        <h1>{t("popupTitleHeading", "Dual Subtitle Control")}</h1>
+        <p className="subhead">{t("popupSubhead", "Display translated subtitles below the original subtitles.")}</p>
       </header>
 
       <section className="panel">
         <label className="field row" htmlFor="enabled">
-          <span className="field-title">Translation</span>
+          <span className="field-title">{t("translationToggle", "Translation")}</span>
           <span className="switch">
             <input
               id="enabled"
@@ -101,7 +118,7 @@ export default function App() {
         </label>
 
         <label className="field" htmlFor="targetLanguage">
-          <span className="field-title">Target Language</span>
+          <span className="field-title">{t("targetLanguage", "Target Language")}</span>
           <select
             id="targetLanguage"
             value={targetLanguage}
@@ -117,24 +134,33 @@ export default function App() {
         </label>
 
         <label className="field" htmlFor="preserveTerms">
-          <span className="field-title">Preserve Terms</span>
+          <span className="field-title">{t("preserveTerms", "Preserve Terms")}</span>
           <textarea
             id="preserveTerms"
             value={preserveTermsText}
             onChange={handlePreserveTermsChange}
-            placeholder={"React\nNode.js\nKubernetes"}
+            placeholder={t("preserveTermsPlaceholder", "React\nNode.js\nKubernetes")}
             rows={4}
           />
           <span className="field-help">
-            한 줄에 하나씩 입력하면 번역 시 원문 그대로 유지됩니다.
+            {t(
+              "preserveTermsHelp",
+              "Enter one term per line to keep it unchanged during translation.",
+            )}
           </span>
         </label>
       </section>
 
       <p className="hint">
         {enabled
-          ? "번역 자막이 원본 자막 아래에 자동으로 표시됩니다."
-          : "번역이 비활성화되어 있습니다. 토글을 켜서 사용하세요."}
+          ? t(
+              "translationEnabledHint",
+              "Translated subtitles are automatically shown under the original subtitles.",
+            )
+          : t(
+              "translationDisabledHint",
+              "Translation is disabled. Enable it with the toggle.",
+            )}
       </p>
     </main>
   );

@@ -22,12 +22,25 @@ This Chrome extension translates Udemy lecture captions into a selected language
 - Translation ON/OFF toggle
 - Select target language
 - Preserve Terms (custom glossary): keep specified terms untranslated
+- Popup UI localization (auto follows browser locale)
+- Localized extension metadata via Chrome i18n
 - Auto technical-term protection with token scoring (reduces over-protection)
 - Render translated captions below the original (dual subtitles)
 - Reuse cached translations for repeated sentences
 - Prefetch VTT captions to reduce perceived latency
 - Automatically ignore sprite VTTs (thumb-sprites)
 - Polling-based watch mode for stable file change detection on WSL/mounted drives
+
+## UI Localization Update
+
+- Added Chrome i18n workflow to `public/manifest.json` with `default_locale` and `__MSG_...__` placeholders.
+- Added popup localization helper in `src/popup/i18n.ts` using `chrome.i18n.getMessage` and UI language resolution.
+- Replaced hard-coded popup strings in `src/popup/App.tsx` with locale lookup fallbacks.
+- Added built-in locale bundles:
+  - `public/_locales/en/messages.json`
+  - `public/_locales/ko/messages.json`
+  - `public/_locales/ja/messages.json`
+- Added `popup.html` language/title baseline values aligned to extension locale behavior.
 
 ## Tech Stack
 
@@ -54,6 +67,48 @@ This Chrome extension translates Udemy lecture captions into a selected language
 3. Select the target language.
 4. (Optional) Add terms in **Preserve Terms** (one per line) to keep them in original form.
 5. Translated captions appear below the original captions automatically.
+
+### Supported UI locales
+
+- `en` (default)
+- `ko`
+- `ja`
+
+To add another locale, add `public/_locales/<locale>/messages.json` and define the same keys used by the popup.
+
+Minimal locale schema example:
+
+```json
+{
+  "extensionName": { "message": "..." },
+  "extensionDescription": { "message": "..." },
+  "actionTitle": { "message": "..." },
+  "popupTitle": { "message": "..." },
+  "popupTitleHeading": { "message": "..." },
+  "popupSubhead": { "message": "..." },
+  "translationToggle": { "message": "..." },
+  "targetLanguage": { "message": "..." },
+  "preserveTerms": { "message": "..." },
+  "preserveTermsPlaceholder": { "message": "..." },
+  "preserveTermsHelp": { "message": "..." },
+  "translationEnabledHint": { "message": "..." },
+  "translationDisabledHint": { "message": "..." },
+  "langKo": { "message": "..." },
+  "langEn": { "message": "..." },
+  "langJa": { "message": "..." },
+  "langZhCN": { "message": "..." },
+  "langZhTW": { "message": "..." },
+  "langEs": { "message": "..." },
+  "langFr": { "message": "..." },
+  "langDe": { "message": "..." },
+  "langIt": { "message": "..." },
+  "langPt": { "message": "..." },
+  "langRu": { "message": "..." },
+  "langVi": { "message": "..." },
+  "langId": { "message": "..." },
+  "langTh": { "message": "..." }
+}
+```
 
 ## Dev Reload (Auto Refresh)
 

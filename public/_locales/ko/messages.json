@@ -1,0 +1,43 @@
+{
+  "extensionName": { "message": "Udemy 이중 자막 번역기" },
+  "extensionDescription": {
+    "message": "Udemy 강의 자막을 선택한 언어로 번역해 원문 아래에 번역 자막을 함께 표시합니다."
+  },
+  "actionTitle": { "message": "Udemy 이중 자막" },
+
+  "popupTitle": { "message": "Udemy 이중 자막 번역기" },
+  "popupTitleHeading": { "message": "이중 자막 설정" },
+  "popupSubhead": {
+    "message": "원본 자막 아래에 번역 자막을 함께 표시합니다."
+  },
+  "translationToggle": { "message": "번역" },
+  "targetLanguage": { "message": "번역 언어" },
+  "preserveTerms": { "message": "보존 단어" },
+  "preserveTermsPlaceholder": {
+    "message": "React\nNode.js\nKubernetes"
+  },
+  "preserveTermsHelp": {
+    "message": "한 줄에 하나씩 입력하면 번역 시 원문 그대로 유지됩니다."
+  },
+  "translationEnabledHint": {
+    "message": "번역 자막이 원문 자막 아래에 자동으로 표시됩니다."
+  },
+  "translationDisabledHint": {
+    "message": "번역이 비활성화되어 있습니다. 토글을 켜서 사용하세요."
+  },
+
+  "langKo": { "message": "한국어" },
+  "langEn": { "message": "영어" },
+  "langJa": { "message": "일본어" },
+  "langZhCN": { "message": "중국어(간체)" },
+  "langZhTW": { "message": "중국어(번체)" },
+  "langEs": { "message": "스페인어" },
+  "langFr": { "message": "프랑스어" },
+  "langDe": { "message": "독일어" },
+  "langIt": { "message": "이탈리아어" },
+  "langPt": { "message": "포르투갈어" },
+  "langRu": { "message": "러시아어" },
+  "langVi": { "message": "베트남어" },
+  "langId": { "message": "인도네시아어" },
+  "langTh": { "message": "태국어" }
+}
