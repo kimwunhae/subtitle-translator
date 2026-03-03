@@ -26,6 +26,21 @@
     "message": "翻訳は無効になっています。トグルを有効にしてください。"
   },
 
+  "downloadVtt": { "message": "VTT をダウンロード" },
+  "downloadInProgress": { "message": "ダウンロード中..." },
+  "downloadHelp": {
+    "message": "検出された字幕 VTT ファイルをダウンロードします。"
+  },
+  "downloadPreparing": {
+    "message": "VTT ダウンロードを準備中..."
+  },
+  "downloadStarted": {
+    "message": "VTT のダウンロードを開始しました。"
+  },
+  "downloadError": {
+    "message": "VTT のダウンロードに失敗しました。"
+  },
+
   "langKo": { "message": "韓国語" },
   "langEn": { "message": "英語" },
   "langJa": { "message": "日本語" },

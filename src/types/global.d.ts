@@ -32,6 +32,22 @@ declare global {
   type PrefetchVttResponse =
     | { ok: true; items: { text: string; translatedText: string }[] }
     | { ok: false; error: string };
+
+  type GetCurrentVttUrlRequest = {
+    type: 'GET_CURRENT_VTT_URL';
+  };
+
+  type GetCurrentVttUrlResponse =
+    | { ok: true; url: string }
+    | { ok: false; error: string };
+
+  type DownloadVttRequest = {
+    type: 'DOWNLOAD_VTT';
+  };
+
+  type DownloadVttResponse =
+    | { ok: true; downloadId: number }
+    | { ok: false; error: string };
 }
 
 export {};

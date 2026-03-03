@@ -30,12 +30,14 @@ This Chrome extension translates Udemy lecture captions into a selected language
 - Prefetch VTT captions to reduce perceived latency
 - Automatically ignore sprite VTTs (thumb-sprites)
 - Polling-based watch mode for stable file change detection on WSL/mounted drives
+- Download current lecture VTT file directly from popup
 
 ## UI Localization Update
 
 - Added Chrome i18n workflow to `public/manifest.json` with `default_locale` and `__MSG_...__` placeholders.
 - Added popup localization helper in `src/popup/i18n.ts` using `chrome.i18n.getMessage` and UI language resolution.
 - Replaced hard-coded popup strings in `src/popup/App.tsx` with locale lookup fallbacks.
+- Added popup VTT download action and wired it through background message flow.
 - Added built-in locale bundles:
   - `public/_locales/en/messages.json`
   - `public/_locales/ko/messages.json`
@@ -67,6 +69,7 @@ This Chrome extension translates Udemy lecture captions into a selected language
 3. Select the target language.
 4. (Optional) Add terms in **Preserve Terms** (one per line) to keep them in original form.
 5. Translated captions appear below the original captions automatically.
+6. Click **Download VTT** to save the detected subtitle file.
 
 ### Supported UI locales
 
@@ -132,6 +135,8 @@ If you are using WSL with a mounted Windows path (e.g. `/mnt/c/...`), polling wa
 ## Permissions
 
 - `storage`: store user settings
+- `tabs`: inspect active tab and communicate with content script
+- `downloads`: save subtitle VTT files
 - `https://www.udemy.com/*`: access Udemy lecture pages
 - `https://translate.googleapis.com/*`: call translation API
 - `http://localhost:35729/*`: dev reload server (dev only)

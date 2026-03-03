@@ -26,6 +26,21 @@
     "message": "Translation is disabled. Enable it with the toggle."
   },
 
+  "downloadVtt": { "message": "Download VTT" },
+  "downloadInProgress": { "message": "Downloading..." },
+  "downloadHelp": {
+    "message": "Download the detected subtitle VTT file."
+  },
+  "downloadPreparing": {
+    "message": "Preparing VTT download..."
+  },
+  "downloadStarted": {
+    "message": "VTT download started."
+  },
+  "downloadError": {
+    "message": "Failed to download VTT."
+  },
+
   "langKo": { "message": "Korean" },
   "langEn": { "message": "English" },
   "langJa": { "message": "Japanese" },

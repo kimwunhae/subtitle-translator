@@ -493,6 +493,100 @@ async function prefetchTranslations(
   return translated;
 }
 
+function queryActiveTab() {
+  return new Promise<chrome.tabs.Tab>((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message ?? 'Failed to read active tab.'));
+        return;
+      }
+
+      const tab = tabs[0];
+      if (!tab || tab.id === undefined) {
+        reject(new Error('No active tab found.'));
+        return;
+      }
+
+      resolve(tab);
+    });
+  });
+}
+
+function sendMessageToTab<TRequest extends object, TResponse>(
+  tabId: number,
+  message: TRequest,
+) {
+  return new Promise<TResponse>((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, message, (response: TResponse) => {
+      if (chrome.runtime.lastError) {
+        reject(
+          new Error(
+            chrome.runtime.lastError.message ?? 'Could not communicate with the Udemy page script.',
+          ),
+        );
+        return;
+      }
+
+      if (!response) {
+        reject(new Error('No response from content script.'));
+        return;
+      }
+
+      resolve(response);
+    });
+  });
+}
+
+function makeSafeFileName(raw: string) {
+  return raw
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function startVttDownload() {
+  const activeTab = await queryActiveTab();
+  if (!activeTab.url?.startsWith('https://www.udemy.com/')) {
+    throw new Error('Open a Udemy lecture page before downloading subtitles.');
+  }
+
+  const response = await sendMessageToTab<GetCurrentVttUrlRequest, GetCurrentVttUrlResponse>(
+    activeTab.id!,
+    { type: 'GET_CURRENT_VTT_URL' },
+  );
+
+  if (!response.ok) {
+    throw new Error(response.error || 'Could not get VTT URL from page.');
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const title = makeSafeFileName(activeTab.title ?? 'udemy') || 'udemy';
+  const filename = `${title}-${timestamp}.vtt`;
+
+  return new Promise<number>((resolve, reject) => {
+    chrome.downloads.download({
+      url: response.url,
+      filename,
+      saveAs: true,
+    },
+    (downloadId) => {
+      if (chrome.runtime.lastError) {
+        reject(
+          new Error(chrome.runtime.lastError.message ?? 'Failed to trigger VTT download.'),
+        );
+        return;
+      }
+
+      if (downloadId === undefined) {
+        reject(new Error('Failed to start VTT download.'));
+        return;
+      }
+
+      resolve(downloadId);
+    });
+  });
+}
+
 void refreshSettingsCache();
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'sync') {
@@ -505,7 +599,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 });
 
 chrome.runtime.onMessage.addListener(
-  (message: TranslateRequest | PrefetchVttRequest, _sender, sendResponse) => {
+  (
+    message: TranslateRequest | PrefetchVttRequest | DownloadVttRequest,
+    _sender,
+    sendResponse,
+  ) => {
     if (message?.type === 'TRANSLATE_TEXT') {
       translateText(message.text ?? '', message.targetLanguage ?? 'ko')
         .then((translatedText) => {
@@ -539,6 +637,21 @@ chrome.runtime.onMessage.addListener(
           };
           sendResponse(reply);
         });
+
+      return true;
+    }
+
+    if (message?.type === 'DOWNLOAD_VTT') {
+      void startVttDownload().then((downloadId) => {
+        const response: DownloadVttResponse = { ok: true, downloadId };
+        sendResponse(response);
+      }).catch((error: Error) => {
+        const response: DownloadVttResponse = {
+          ok: false,
+          error: error.message,
+        };
+        sendResponse(response);
+      });
 
       return true;
     }

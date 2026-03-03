@@ -35,6 +35,8 @@ export default function App() {
     DEFAULT_SETTINGS.targetLanguage
   );
   const [preserveTermsText, setPreserveTermsText] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState("");
 
   const languageOptions = useMemo(
     () =>
@@ -93,6 +95,50 @@ export default function App() {
       targetLanguage,
       preserveTerms: parsePreserveTerms(nextValue)
     });
+  };
+
+  const handleDownloadVtt = () => {
+    if (isDownloading) {
+      return;
+    }
+
+    setIsDownloading(true);
+    setDownloadMessage(t("downloadPreparing", "Preparing VTT download..."));
+
+    const request = new Promise<DownloadVttResponse>((resolve) => {
+      chrome.runtime.sendMessage({ type: "DOWNLOAD_VTT" }, (response: DownloadVttResponse) => {
+        if (chrome.runtime.lastError) {
+          resolve({
+            ok: false,
+            error: chrome.runtime.lastError.message ?? "Failed to start download.",
+          });
+          return;
+        }
+
+        if (!response) {
+          resolve({ ok: false, error: "No response from background." });
+          return;
+        }
+
+        resolve(response);
+      });
+    });
+
+    void request
+      .then((response) => {
+        if (response.ok) {
+          setDownloadMessage(t("downloadStarted", "VTT download started."));
+          return;
+        }
+
+        setDownloadMessage(response.error ?? t("downloadError", "Failed to download VTT."));
+      })
+      .catch(() => {
+        setDownloadMessage(t("downloadError", "Failed to download VTT."));
+      })
+      .finally(() => {
+        setIsDownloading(false);
+      });
   };
 
   return (
@@ -162,6 +208,26 @@ export default function App() {
               "Translation is disabled. Enable it with the toggle.",
             )}
       </p>
+
+      <section className="panel panel--compact">
+        <label className="field" htmlFor="vttDownload">
+          <span className="field-title">{t("downloadVtt", "Download VTT")}</span>
+          <button
+            id="vttDownload"
+            type="button"
+            className="button"
+            onClick={handleDownloadVtt}
+            disabled={isDownloading}
+          >
+            {isDownloading
+              ? t("downloadInProgress", "Downloading...")
+              : t("downloadVtt", "Download VTT")}
+          </button>
+          <span className="field-help">
+            {downloadMessage || t("downloadHelp", "Download the detected subtitle VTT file.")}
+          </span>
+        </label>
+      </section>
     </main>
   );
 }

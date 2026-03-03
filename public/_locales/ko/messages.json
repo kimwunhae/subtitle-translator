@@ -26,6 +26,21 @@
     "message": "번역이 비활성화되어 있습니다. 토글을 켜서 사용하세요."
   },
 
+  "downloadVtt": { "message": "VTT 다운로드" },
+  "downloadInProgress": { "message": "다운로드 중..." },
+  "downloadHelp": {
+    "message": "감지된 자막 VTT 파일을 다운로드합니다."
+  },
+  "downloadPreparing": {
+    "message": "VTT 다운로드를 준비하는 중입니다..."
+  },
+  "downloadStarted": {
+    "message": "VTT 다운로드가 시작되었습니다."
+  },
+  "downloadError": {
+    "message": "VTT 다운로드를 시작하지 못했습니다."
+  },
+
   "langKo": { "message": "한국어" },
   "langEn": { "message": "영어" },
   "langJa": { "message": "일본어" },

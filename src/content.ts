@@ -435,6 +435,25 @@ async function init() {
   setupDevReload();
 }
 
+chrome.runtime.onMessage.addListener(
+  (message: GetCurrentVttUrlRequest, _sender, sendResponse) => {
+    if (message?.type === 'GET_CURRENT_VTT_URL') {
+      const nextUrl = vttUrl ?? discoverVttUrl();
+      if (nextUrl) {
+        vttUrl = nextUrl;
+        const response: GetCurrentVttUrlResponse = { ok: true, url: nextUrl };
+        sendResponse(response);
+      } else {
+        const response: GetCurrentVttUrlResponse = {
+          ok: false,
+          error: 'No VTT URL detected on current page.',
+        };
+        sendResponse(response);
+      }
+    }
+  },
+);
+
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'sync') {
     return;
